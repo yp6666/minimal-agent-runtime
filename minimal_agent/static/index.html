@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="从零实现的最小可用 Agent 运行台" />
+    <title>MiniAgent · Runtime Console</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2315213b'/%3E%3Cpath d='M17 46V18h8l7 13 7-13h8v28h-7V29l-8 14-8-14v17z' fill='white'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#composer">跳到输入框</a>
+    <main class="app-shell">
+      <aside class="sessions-panel" aria-labelledby="sessions-title">
+        <header class="brand">
+          <div class="brand-mark" aria-hidden="true">M</div>
+          <div>
+            <p class="eyebrow">FROM-SCRATCH RUNTIME</p>
+            <h1>MiniAgent</h1>
+          </div>
+        </header>
+
+        <div class="panel-heading">
+          <h2 id="sessions-title">会话</h2>
+          <button id="new-session" class="icon-button" type="button" aria-label="新建会话">＋</button>
+        </div>
+        <nav id="session-list" class="session-list" aria-label="会话列表"></nav>
+
+        <div class="system-card" aria-live="polite">
+          <div class="status-line">
+            <span id="health-dot" class="status-dot"></span>
+            <strong id="health-label">正在检查配置</strong>
+          </div>
+          <p id="health-detail">连接运行时…</p>
+        </div>
+      </aside>
+
+      <section class="chat-panel" aria-labelledby="conversation-title">
+        <header class="chat-header">
+          <div>
+            <p class="eyebrow">ACTIVE SESSION</p>
+            <h2 id="conversation-title">准备开始</h2>
+          </div>
+          <div class="runtime-badge">
+            <span aria-hidden="true">↻</span>
+            Agent Loop
+          </div>
+        </header>
+
+        <div id="messages" class="messages" aria-live="polite">
+          <div class="empty-state">
+            <p class="empty-kicker">一条输入，多步完成</p>
+            <h3>让模型决定何时动手</h3>
+            <p>试试“查北京天气，如果下雨就帮我记一个带伞待办”。</p>
+          </div>
+        </div>
+
+        <form id="composer" class="composer">
+          <label for="message-input">给 Agent 一个任务</label>
+          <div class="composer-row">
+            <textarea
+              id="message-input"
+              rows="2"
+              maxlength="10000"
+              placeholder="输入消息，Enter 发送，Shift + Enter 换行"
+              required
+            ></textarea>
+            <button id="send-button" type="submit">
+              <span>运行</span>
+              <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="inspector-panel" aria-labelledby="trace-title">
+        <section class="inspector-section trace-section">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">OBSERVABILITY</p>
+              <h2 id="trace-title">执行轨迹</h2>
+            </div>
+            <span id="step-count" class="count-badge">0</span>
+          </div>
+          <ol id="trace-list" class="trace-list">
+            <li class="trace-empty">运行任务后，这里会显示每一步决策。</li>
+          </ol>
+        </section>
+
+        <section class="inspector-section todo-section" aria-labelledby="todo-title">
+          <div class="panel-heading">
+            <h2 id="todo-title">本会话待办</h2>
+            <span id="todo-count" class="count-badge">0</span>
+          </div>
+          <ul id="todo-list" class="todo-list">
+            <li class="todo-empty">还没有待办</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+
+    <dialog id="delete-dialog" class="confirm-dialog" aria-labelledby="delete-dialog-title">
+      <div class="confirm-dialog-content">
+        <p class="eyebrow">DESTRUCTIVE ACTION</p>
+        <h2 id="delete-dialog-title">删除这个会话？</h2>
+        <p id="delete-dialog-description" class="confirm-dialog-description"></p>
+        <div class="confirm-dialog-actions">
+          <button id="cancel-delete" class="secondary-button" type="button">取消</button>
+          <button id="confirm-delete" class="danger-button" type="button">删除会话</button>
+        </div>
+      </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="assertive"></div>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
