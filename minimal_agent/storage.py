@@ -300,26 +300,60 @@ class SQLiteStore:
             )
             todo_id = int(cursor.lastrowid)
             row = db.execute("SELECT * FROM todos WHERE id=?", (todo_id,)).fetchone()
-        return dict(row)
+            session_number = int(
+                db.execute(
+                    "SELECT COUNT(*) FROM todos WHERE session_id=? AND id<=?",
+                    (session_id, todo_id),
+                ).fetchone()[0]
+            )
+        item = dict(row)
+        item["id"] = session_number
+        return item
 
     def list_todos(self, session_id: str) -> list[dict[str, Any]]:
         with self._connect() as db:
             rows = db.execute(
-                "SELECT * FROM todos WHERE session_id=? ORDER BY id DESC",
+                "SELECT * FROM todos WHERE session_id=? ORDER BY id",
                 (session_id,),
             ).fetchall()
-        return [dict(row) for row in rows]
+        items = [dict(row) for row in rows]
+        for session_number, item in enumerate(items, start=1):
+            item["id"] = session_number
+        return items
 
     def complete_todo(self, session_id: str, item_id: int) -> dict[str, Any] | None:
         with self._connect() as db:
+            rows = db.execute(
+                "SELECT * FROM todos WHERE session_id=? ORDER BY id",
+                (session_id,),
+            ).fetchall()
+            target = rows[item_id - 1] if item_id <= len(rows) else None
+            # Compatibility for older conversations that may still mention a
+            # previously exposed global database id.
+            if target is None:
+                target = db.execute(
+                    "SELECT * FROM todos WHERE id=? AND session_id=?",
+                    (item_id, session_id),
+                ).fetchone()
+            if target is None:
+                return None
+            session_number = next(
+                index
+                for index, row in enumerate(rows, start=1)
+                if row["id"] == target["id"]
+            )
             cursor = db.execute(
                 """
                 UPDATE todos SET status='completed'
                 WHERE id=? AND session_id=?
                 """,
-                (item_id, session_id),
+                (target["id"], session_id),
             )
             if cursor.rowcount == 0:
                 return None
-            row = db.execute("SELECT * FROM todos WHERE id=?", (item_id,)).fetchone()
-        return dict(row)
+            row = db.execute(
+                "SELECT * FROM todos WHERE id=?", (target["id"],)
+            ).fetchone()
+        item = dict(row)
+        item["id"] = session_number
+        return item
